@@ -40,48 +40,62 @@ export const bridges = {
 
 // Defines routes
 export const routes = {
-    assets: await bridges.guard(async (inbound) => {
-        // Validates path
-        const folder = nodePath.resolve(project.root, "./assets/");
-        const target = inbound.url.split("/").slice(4).join("/");
-        const path = nodePath.resolve(folder, target);
-        if(!path.startsWith(folder)) excepts.raise(excepts.Label.MISSING_ASSET);
-    
-        // Fetches file
-        const file = Bun.file(path);
-        if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_ASSET);
-        return new Response(file);
-    }) as Route,
+    apis: {
+        favs: await bridges.guard(async (inbound) => {
+            // Fetches path
+            const target = inbound.url.split("/").slice(5).join("/");
+            return new Response(`resolved: "${target}"`);
+        })
+    },
     fallback: await bridges.guard(() => {
         // Raises exception
         excepts.raise(excepts.Label.MISSING_ENDPOINT);
     }) as Route,
-    page: await bridges.guard(() => {
-        // Raises exception
-        excepts.raise(excepts.Label.INCOMPLETE_ENDPOINT);
-    }),
-    resource: await bridges.guard(async (inbound) => {
-        // Validates path
-        const target = inbound.url.split("/").slice(3).join("/");
-        const table = {
-            "favicon.ico": "favicon.ico",
-            "robots.txt": "robots.txt"
-        };
-        if(!(target in table)) excepts.raise(excepts.Label.MISSING_RESOURCE);
-        const path = nodePath.resolve(project.root, table[target as keyof typeof table]);
-        if(!path.startsWith(project.root)) excepts.raise(excepts.Label.MISSING_RESOURCE);
-    
-        // Fetches file
-        const file = Bun.file(path);
-        if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_RESOURCE);
-        return new Response(file);
-    }) as Route
-}
+    files: {
+        assets: await bridges.guard(async (inbound) => {
+            // Validates path
+            const folder = nodePath.resolve(project.root, "./assets/");
+            const target = inbound.url.split("/").slice(4).join("/");
+            const path = nodePath.resolve(folder, target);
+            if(!path.startsWith(folder)) excepts.raise(excepts.Label.MISSING_ASSET);
+        
+            // Fetches file
+            const file = Bun.file(path);
+            if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_ASSET);
+            return new Response(file);
+        }) as Route,
+        resources: await bridges.guard(async (inbound) => {
+            // Validates path
+            const target = inbound.url.split("/").slice(3).join("/");
+            const table = {
+                "favicon.ico": "favicon.ico",
+                "robots.txt": "robots.txt"
+            };
+            if(!(target in table)) excepts.raise(excepts.Label.MISSING_RESOURCE);
+            const path = nodePath.resolve(project.root, table[target as keyof typeof table]);
+            if(!path.startsWith(project.root)) excepts.raise(excepts.Label.MISSING_RESOURCE);
+        
+            // Fetches file
+            const file = Bun.file(path);
+            if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_RESOURCE);
+            return new Response(file);
+        }) as Route
+    },
+    pages: {
+        main: await bridges.guard(() => {
+            // Raises exception
+            excepts.raise(excepts.Label.INCOMPLETE_ENDPOINT);
+        })
+    }
+};
 
 // Defines endpoints
 export const endpoints = {
-    "/assets/*": routes.assets,
-    "/favicon.ico": routes.resource,
-    "/robots.txt": routes.resource
+    "/api/favs/*": routes.apis.favs,
+    "/api/favs": routes.apis.favs,
+    "/assets/*": routes.files.assets,
+    "/favicon.ico": routes.files.resources,
+    "/robots.txt": routes.files.resources,
+    "/": routes.pages.main
 };
 export const fallback = routes.fallback;
