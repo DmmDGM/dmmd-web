@@ -56,6 +56,10 @@ export const routes = {
         // Raises exception
         excepts.raise(excepts.Label.MISSING_ENDPOINT);
     }) as Route,
+    page: await bridges.guard(() => {
+        // Raises exception
+        excepts.raise(excepts.Label.INCOMPLETE_ENDPOINT);
+    }),
     resource: await bridges.guard(async (inbound) => {
         // Validates path
         const target = inbound.url.split("/").slice(3).join("/");
