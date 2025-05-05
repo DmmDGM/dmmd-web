@@ -1,20 +1,12 @@
 // Imports
-import * as routes from "./routes";
+import * as passes from "./passes";
 import * as project from "./project";
 import * as logs from "./logs";
 
 // Starts server
-const server = Bun.serve({
-    fetch: (request: Request) => routes.fallback(request),
+Bun.serve({
+    fetch: passes.fallback,
     port: project.port,
-    routes: {
-        "/assets/*": async (request: Bun.BunRequest<"/assets/*">) =>
-            await routes.assets(request),
-        "/:target": async (request: Bun.BunRequest<"/:target">) =>
-            await routes.resources(request),
-
-        "/": async (request: Bun.BunRequest<"/">) =>
-            await routes.main(request)
-    }
-}) as Bun.Server;
+    routes: passes.endpoints
+});
 logs.listen(project.port);
