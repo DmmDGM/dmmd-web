@@ -1,0 +1,17 @@
+/* Resets */
+html, body {
+    height: 100vh;
+    margin: 0px;
+    padding: 0px;
+    width: 100vw;
+}
+
+body {
+    background-color: var(--sd-mono-50);
+}
+
+* {
+    color: var(--sd-mono-950);
+}
+
+/*  */
