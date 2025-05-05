@@ -10,7 +10,7 @@ export type Bridge = (route: Route) => Promise<Route> | Route;
 
 // Defines bridges
 export const bridges = {
-    guard: ((route: Route) => {
+    watch: ((route: Route) => {
         // Creates reroute
         const reroute: Route = async (inbound) => {
             // Processes inbound
@@ -41,18 +41,19 @@ export const bridges = {
 // Defines routes
 export const routes = {
     apis: {
-        favs: await bridges.guard(async (inbound) => {
+        favs: await bridges.watch(async (inbound) => {
             // Fetches path
             const target = inbound.url.split("/").slice(5).join("/");
-            return new Response(`resolved: "${target}"`);
+            const json = (await import("./data/favs.json")).default;
+            return Response.json(json);
         })
     },
-    fallback: await bridges.guard(() => {
+    fallback: await bridges.watch(() => {
         // Raises exception
         excepts.raise(excepts.Label.MISSING_ENDPOINT);
     }) as Route,
     files: {
-        assets: await bridges.guard(async (inbound) => {
+        assets: await bridges.watch(async (inbound) => {
             // Validates path
             const folder = nodePath.resolve(project.root, "./assets/");
             const target = inbound.url.split("/").slice(4).join("/");
@@ -64,7 +65,7 @@ export const routes = {
             if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_ASSET);
             return new Response(file);
         }) as Route,
-        resources: await bridges.guard(async (inbound) => {
+        resources: await bridges.watch(async (inbound) => {
             // Validates path
             const target = inbound.url.split("/").slice(3).join("/");
             const table = {
@@ -82,7 +83,7 @@ export const routes = {
         }) as Route
     },
     pages: {
-        main: await bridges.guard(() => {
+        main: await bridges.watch(() => {
             // Raises exception
             excepts.raise(excepts.Label.INCOMPLETE_ENDPOINT);
         })
