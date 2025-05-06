@@ -1,6 +1,6 @@
 // Imports
 import nodePath from "node:path";
-import * as dmmd from "./dmmd";
+// import * as dmmd from "./dmmd";
 import * as excepts from "./excepts";
 import * as logs from "./logs";
 import * as project from "./project";
@@ -50,17 +50,22 @@ export const routes = {
         // }),
         frens: await bridges.watch(async () => {
             // Fetches data
-            const data = await import("./data/frens");
-            return Response.json(data);
+            const data = await import("./data/network");
+            return Response.json(data.frens);
         }) as Route,
         funni: await bridges.watch(() => {
             // Returns funni
             return new Response(":3 🎉");
-        }) as Route
+        }) as Route,
+        self: await bridges.watch(async () => {
+            // Fetches data
+            const data = await import("./data/network");
+            return Response.json(data.self);
+        }) as Route,
     },
     fallback: await bridges.watch((inbound) => {
         // Raises exception
-        if(dmmd.sniffGoos(inbound)) excepts.raise(excepts.Label.GOOS_DETECTED);
+        // if(dmmd.sniffGoos(inbound)) excepts.raise(excepts.Label.GOOS_DETECTED);
         excepts.raise(excepts.Label.MISSING_ENDPOINT);
     }) as Route,
     files: {
@@ -119,8 +124,9 @@ export const endpoints = {
     // Api
     // "/api/favs/*": routes.apis.favs,
     // "/api/favs": routes.apis.favs,
-    "/api/frens": routes.api.frens,
     "/api/0x3A33": routes.api.funni,
+    "/api/frens": routes.api.frens,
+    "/api/self": routes.api.self,
 
     // Files
     "/assets/*": routes.files.assets,
