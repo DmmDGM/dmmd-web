@@ -42,26 +42,45 @@ export const bridges = {
 // Defines routes
 export const routes = {
     api: {
-        // favs: await bridges.watch(async (inbound) => {
-        //     // Fetches path
-        //     const target = inbound.url.split("/").slice(5).join("/");
-        //     const json = (await import("./data/favs"));
-        //     return Response.json(json);
-        // }),
-        frens: await bridges.watch(async () => {
-            // Fetches data
-            const data = await import("./data/network");
-            return Response.json(data.frens);
-        }) as Route,
         funni: await bridges.watch(() => {
             // Returns funni
             return new Response(":3 🎉");
         }) as Route,
-        self: await bridges.watch(async () => {
+        network: await bridges.watch(async (inbound) => {
             // Fetches data
             const data = await import("./data/network");
-            return Response.json(data.self);
+            const target = inbound.url.split("/").slice(5).join("/");
+            console.log("TARGET", target);
+            switch(target) {
+                case "self": {
+                    return Response.json(data.self);
+                }
+                case "frens": {
+                    return Response.json(data.frens);
+                }
+                default: {
+                    excepts.raise(excepts.Label.BAD_REQUEST);
+                }
+            }
         }) as Route,
+        stats: await bridges.watch(async (inbound) => {
+            // Fetches data
+            const data = await import("./data/stats");
+            const target = inbound.url.split("/").slice(5).join("/");
+            console.log("TARGET", target);
+            switch(target) {
+                case "animations":
+                case "anime": {
+                    return Response.json(data.animations);
+                }
+                case "games": {
+                    return Response.json(data.games);
+                }
+                default: {
+                    excepts.raise(excepts.Label.BAD_REQUEST);
+                }
+            }
+        }) as Route
     },
     fallback: await bridges.watch((inbound) => {
         // Raises exception
@@ -122,11 +141,9 @@ export const routes = {
 // Defines endpoints
 export const endpoints = {
     // Api
-    // "/api/favs/*": routes.apis.favs,
-    // "/api/favs": routes.apis.favs,
     "/api/0x3A33": routes.api.funni,
-    "/api/frens": routes.api.frens,
-    "/api/self": routes.api.self,
+    "/api/network/*": routes.api.network,
+    "/api/stats/*": routes.api.stats,
 
     // Files
     "/assets/*": routes.files.assets,

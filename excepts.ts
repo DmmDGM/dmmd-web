@@ -19,7 +19,7 @@ export const codes: { [ label in Label ]: string } = {
 };
 export const messages: { [ label in Label ]: string } = {
     [ Label.BAD_REQUEST ]: "Data is invalid or incomplete. Your request could not be processed.",
-    [ Label.GOOS_DETECTED ]: "Goos detected. Go lick something else.",
+    [ Label.GOOS_DETECTED ]: "Goos detected. Go lick someone else.",
     [ Label.INCOMPLETE_ENDPOINT ]: "Endpoint incomplete. Please try again later.",
     [ Label.MISSING_ENDPOINT ]: "Endpoint not found.",
     [ Label.MISSING_FILE ]: "File not found.",
@@ -48,7 +48,7 @@ export class Exception extends Error {
         this.label = label;
     }
 
-    // Defines getters
+    // Defines details
     get code(): string {
         return codes[this.label];
     }
