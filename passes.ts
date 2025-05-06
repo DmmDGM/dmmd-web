@@ -1,24 +1,25 @@
 // Imports
 import nodePath from "node:path";
+import * as dmmd from "./dmmd";
 import * as excepts from "./excepts";
 import * as logs from "./logs";
 import * as project from "./project";
 
 // Defines types
-export type Route = (inbound: Request) => Promise<Response> | Response;
+export type Route = (inbound: Request, server: Bun.Server) => Promise<Response> | Response;
 export type Bridge = (route: Route) => Promise<Route> | Route;
 
 // Defines bridges
 export const bridges = {
     watch: ((route: Route) => {
         // Creates reroute
-        const reroute: Route = async (inbound) => {
+        const reroute: Route = async (inbound, server) => {
             // Processes inbound
             logs.inbound(inbound);
             
             // Processes outbound
             try {
-                const outbound = await route(inbound);
+                const outbound = await route(inbound, server);
                 logs.outbound(outbound);
                 return outbound;
             }
@@ -40,16 +41,26 @@ export const bridges = {
 
 // Defines routes
 export const routes = {
-    apis: {
-        favs: await bridges.watch(async (inbound) => {
-            // Fetches path
-            const target = inbound.url.split("/").slice(5).join("/");
-            const json = (await import("./data/favs.json")).default;
-            return Response.json(json);
-        })
+    api: {
+        // favs: await bridges.watch(async (inbound) => {
+        //     // Fetches path
+        //     const target = inbound.url.split("/").slice(5).join("/");
+        //     const json = (await import("./data/favs"));
+        //     return Response.json(json);
+        // }),
+        frens: await bridges.watch(async () => {
+            // Fetches data
+            const data = await import("./data/frens");
+            return Response.json(data);
+        }) as Route,
+        funni: await bridges.watch(() => {
+            // Returns funni
+            return new Response(":3 🎉");
+        }) as Route
     },
-    fallback: await bridges.watch(() => {
+    fallback: await bridges.watch((inbound) => {
         // Raises exception
+        if(dmmd.sniffGoos(inbound)) excepts.raise(excepts.Label.GOOS_DETECTED);
         excepts.raise(excepts.Label.MISSING_ENDPOINT);
     }) as Route,
     files: {
@@ -58,45 +69,66 @@ export const routes = {
             const folder = nodePath.resolve(project.root, "./assets/");
             const target = inbound.url.split("/").slice(4).join("/");
             const path = nodePath.resolve(folder, target);
-            if(!path.startsWith(folder)) excepts.raise(excepts.Label.MISSING_ASSET);
+            if(!path.startsWith(folder)) excepts.raise(excepts.Label.MISSING_FILE);
         
             // Fetches file
             const file = Bun.file(path);
-            if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_ASSET);
+            if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_FILE);
             return new Response(file);
         }) as Route,
         resources: await bridges.watch(async (inbound) => {
             // Validates path
             const target = inbound.url.split("/").slice(3).join("/");
             const table = {
-                "favicon.ico": "favicon.ico",
-                "robots.txt": "robots.txt"
+                "favicon.ico": "images/favicon.ico",
+                "robots.txt": "texts/robots.txt"
             };
-            if(!(target in table)) excepts.raise(excepts.Label.MISSING_RESOURCE);
-            const path = nodePath.resolve(project.root, table[target as keyof typeof table]);
-            if(!path.startsWith(project.root)) excepts.raise(excepts.Label.MISSING_RESOURCE);
+            if(!(target in table)) excepts.raise(excepts.Label.MISSING_FILE);
+            const path = nodePath.resolve(project.root, "./assets/", table[target as keyof typeof table]);
+            if(!path.startsWith(project.root)) excepts.raise(excepts.Label.MISSING_FILE);
         
             // Fetches file
             const file = Bun.file(path);
-            if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_RESOURCE);
+            if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_FILE);
             return new Response(file);
-        }) as Route
+        }) as Route,
+        secrets: await bridges.watch(async (inbound) => {
+            // Validates path
+            const folder = nodePath.resolve(project.root, "./secrets/");
+            const target = inbound.url.split("/").slice(4).join("/");
+            const path = nodePath.resolve(folder, target);
+            if(!path.startsWith(folder)) excepts.raise(excepts.Label.MISSING_FILE);
+        
+            // Fetches file
+            const file = Bun.file(path);
+            if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_FILE);
+            return new Response(file);
+        }) as Route,
     },
     pages: {
         main: await bridges.watch(() => {
-            // Raises exception
-            excepts.raise(excepts.Label.INCOMPLETE_ENDPOINT);
-        })
+            // Fetches file
+            const file = Bun.file(nodePath.resolve(project.root, "./assets/htmls/main.html"));
+            return new Response(file);
+        }) as Route
     }
 };
 
 // Defines endpoints
 export const endpoints = {
-    "/api/favs/*": routes.apis.favs,
-    "/api/favs": routes.apis.favs,
+    // Api
+    // "/api/favs/*": routes.apis.favs,
+    // "/api/favs": routes.apis.favs,
+    "/api/frens": routes.api.frens,
+    "/api/0x3A33": routes.api.funni,
+
+    // Files
     "/assets/*": routes.files.assets,
     "/favicon.ico": routes.files.resources,
     "/robots.txt": routes.files.resources,
+    "/secrets/*": routes.files.secrets,
+
+    // Pages
     "/": routes.pages.main
 };
 export const fallback = routes.fallback;

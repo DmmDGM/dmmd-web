@@ -5,6 +5,7 @@ import * as logs from "./logs";
 
 // Starts server
 Bun.serve({
+    development: false,
     fetch: passes.fallback,
     port: project.port,
     routes: passes.endpoints

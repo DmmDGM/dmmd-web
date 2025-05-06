@@ -33,7 +33,7 @@ export function exception(exception: excepts.Exception): string {
 }
 export function inbound(request: Request): string {
     // Creates body
-    const ip = chalk.cyan(request.headers.get("CF-Connecting-IP") ?? "Localhost");
+    const ip = chalk.cyan(request.headers.get("CF-Connecting-IP") ?? "localhost");
     const url = chalk.cyan(request.url);
     const body = `${ip} accessed ${url}.`;
 
