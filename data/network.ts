@@ -7,12 +7,14 @@ export type Social = {
     youtube: string | null;
 };
 export type Info = {
+    id: string;
     name: string;
     social: Social;
 };
 
 // Defnes social
 export const self: Info = {
+    id: "dmmdgm",
     name: "DmmDGM",
     social: {
         discord: "@therock2t",
@@ -26,6 +28,7 @@ export const self: Info = {
 // Defines frens
 export const frens: Info[] = [
     {
+        id: "iipython",
         name: "iiPython",
         social: {
             discord: "@iipython",
@@ -36,6 +39,7 @@ export const frens: Info[] = [
         }
     },
     {
+        id: "k4ffu",
         name: "K4",
         social: {
             discord: "@k4ffu",
@@ -46,6 +50,7 @@ export const frens: Info[] = [
         }
     },
     {
+        id: "1nnag3",
         name: "1nnag3",
         social: {
             discord: "@1nnag3",

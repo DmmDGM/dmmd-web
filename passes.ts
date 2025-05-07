@@ -1,13 +1,12 @@
 // Imports
 import nodePath from "node:path";
-// import * as dmmd from "./dmmd";
 import * as excepts from "./excepts";
 import * as logs from "./logs";
 import * as project from "./project";
 
 // Defines types
 export type Route = (inbound: Request, server: Bun.Server) => Promise<Response> | Response;
-export type Bridge = (route: Route) => Promise<Route> | Route;
+export type Bridge = (route: Route) => Route;
 
 // Defines bridges
 export const bridges = {
@@ -36,17 +35,34 @@ export const bridges = {
             }
         };
         return reroute;
+    }) as Bridge,
+    sniffGoos: ((route: Route) => {
+        // Creates reroute
+        const reroute: Route = (async (inbound, server) => {
+            // Detects goos
+            try {
+                // @ts-ignore
+                const dmmd = await import("./dmmd");
+                if(dmmd.sniffGoos(inbound)) excepts.raise(excepts.Label.GOOS_DETECTED);
+            }
+            catch {}
+            
+            // Processes outbound
+            const outbound = await route(inbound, server);
+            return outbound;
+        });
+        return reroute;
     }) as Bridge
 };
 
 // Defines routes
 export const routes = {
     api: {
-        funni: await bridges.watch(() => {
+        funni: bridges.watch(() => {
             // Returns funni
             return new Response(":3 🎉");
         }) as Route,
-        network: await bridges.watch(async (inbound) => {
+        network: bridges.watch(async (inbound) => {
             // Fetches data
             const data = await import("./data/network");
             const target = inbound.url.split("/").slice(5).join("/");
@@ -63,7 +79,7 @@ export const routes = {
                 }
             }
         }) as Route,
-        stats: await bridges.watch(async (inbound) => {
+        stats: bridges.watch(async (inbound) => {
             // Fetches data
             const data = await import("./data/stats");
             const target = inbound.url.split("/").slice(5).join("/");
@@ -82,13 +98,12 @@ export const routes = {
             }
         }) as Route
     },
-    fallback: await bridges.watch((inbound) => {
+    fallback: bridges.watch(bridges.sniffGoos(() => {
         // Raises exception
-        // if(dmmd.sniffGoos(inbound)) excepts.raise(excepts.Label.GOOS_DETECTED);
         excepts.raise(excepts.Label.MISSING_ENDPOINT);
-    }) as Route,
+    })) as Route,
     files: {
-        assets: await bridges.watch(async (inbound) => {
+        assets: bridges.watch(async (inbound) => {
             // Validates path
             const folder = nodePath.resolve(project.root, "./assets/");
             const target = inbound.url.split("/").slice(4).join("/");
@@ -100,7 +115,7 @@ export const routes = {
             if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_FILE);
             return new Response(file);
         }) as Route,
-        resources: await bridges.watch(async (inbound) => {
+        resources: bridges.watch(async (inbound) => {
             // Validates path
             const target = inbound.url.split("/").slice(3).join("/");
             const table = {
@@ -116,7 +131,7 @@ export const routes = {
             if(!(await file.exists())) excepts.raise(excepts.Label.MISSING_FILE);
             return new Response(file);
         }) as Route,
-        secrets: await bridges.watch(async (inbound) => {
+        secrets: bridges.watch(async (inbound) => {
             // Validates path
             const folder = nodePath.resolve(project.root, "./secrets/");
             const target = inbound.url.split("/").slice(4).join("/");
@@ -130,7 +145,7 @@ export const routes = {
         }) as Route,
     },
     pages: {
-        main: await bridges.watch(() => {
+        main: bridges.watch(() => {
             // Fetches file
             const file = Bun.file(nodePath.resolve(project.root, "./assets/htmls/main.html"));
             return new Response(file);
